@@ -184,23 +184,25 @@ A search bar that actually searches the server, sector filters, a star-to-watch 
 
 ## 🏗️ Architecture
 
-```
-┌─────────────────┐      ┌──────────────────┐      ┌───────────────────┐
-│   Yahoo Finance   │ ───▶ │   FastAPI backend  │ ───▶ │   React frontend    │
-│  (yfinance lib)   │      │                    │      │                    │
-│                   │      │  • SQLite/Postgres │      │  • Vite + Recharts │
-│  5yr OHLCV daily  │      │  • Safety scoring  │      │  • Dark mode       │
-│  Nifty + Sensex   │      │  • Forecasting     │      │  • Paper wallet    │
-└─────────────────┘      │  • Simulations     │      └───────────────────┘
-                          └──────────────────┘
-                                    ▲
-                                    │  POST /ingest/run (scheduled)
-                          ┌──────────────────┐
-                          │        n8n         │
-                          │  Weekday 6:30 PM   │
-                          │  IST trigger + │
-                          │  Telegram alerts   │
-                          └──────────────────┘
+```text
++------------------+    +--------------------+    +--------------------+
+| Yahoo Finance    |    | FastAPI backend    |    | React frontend     |
+| (yfinance lib)   |    |                    |    |                    |
+|                  |    | - SQLite/Postgres  |    | - Vite + Recharts  |
+| 5yr OHLCV daily  | -> | - Safety scoring   | -> | - Dark mode        |
+| Nifty + Sensex   |    | - Forecasting      |    | - Paper wallet     |
++------------------+    | - Simulations      |    +--------------------+
+                        +--------------------+                          
+
+                   ^
+                   | POST /ingest/run (scheduled)
+                   +----------------------+
+                   | n8n                  |
+                   |                      |
+                   | Weekday 6:30 PM IST  |
+                   | trigger + Telegram   |
+                   | failure alert        |
+                   +----------------------+
 ```
 
 **The daily loop:** after NSE closes, n8n (or the backend's built-in scheduler) calls `POST /ingest/run` → FastAPI pulls fresh OHLCV via yfinance → new rows are upserted into the database (existing dates are never re-fetched) → the analytics cache is invalidated → the next request recomputes fresh scores. If it fails, n8n pings a Telegram bot instantly.
