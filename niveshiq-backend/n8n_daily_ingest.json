@@ -1,0 +1,79 @@
+{
+  "name": "NiveshIQ daily market ingest",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            { "field": "cronExpression", "expression": "30 18 * * 1-5" }
+          ]
+        }
+      },
+      "name": "Weekdays 6:30 PM IST",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://YOUR-BACKEND-URL/ingest/run",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Token", "value": "={{ $env.NIVESHIQ_INGEST_TOKEN }}" }
+          ]
+        },
+        "options": { "timeout": 120000 }
+      },
+      "name": "Trigger ingest",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 0],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "started",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ]
+        }
+      },
+      "name": "Ingest started?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [440, 0]
+    },
+    {
+      "parameters": {
+        "text": "NiveshIQ ingest FAILED at {{ $now }}. Check the backend logs.",
+        "chatId": "YOUR_TELEGRAM_CHAT_ID"
+      },
+      "name": "Alert on failure",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [660, 160]
+    }
+  ],
+  "connections": {
+    "Weekdays 6:30 PM IST": { "main": [[{ "node": "Trigger ingest", "type": "main", "index": 0 }]] },
+    "Trigger ingest": {
+      "main": [
+        [{ "node": "Ingest started?", "type": "main", "index": 0 }],
+        [{ "node": "Alert on failure", "type": "main", "index": 0 }]
+      ]
+    },
+    "Ingest started?": {
+      "main": [
+        [],
+        [{ "node": "Alert on failure", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": { "timezone": "Asia/Kolkata" }
+}

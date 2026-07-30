@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+niveshiq.db
+.env
+node_modules/
+dist/
