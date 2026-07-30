@@ -236,7 +236,7 @@ npm run dev                     # → http://localhost:5173
 </details>
 
 <details>
-<summary><strong>3️⃣ Automation (optional, but a nice resume line)</strong></summary>
+<summary><strong>3️⃣ Automation</strong></summary>
 
 ```bash
 npx n8n                         # → http://localhost:5678
